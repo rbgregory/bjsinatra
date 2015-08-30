@@ -1,0 +1,25 @@
+  #hit_form {
+  float: left;
+  margin-right: 10px;
+}
+
+  #stay_form {
+  float: left;
+}
+
+  #yes {
+    margin-right: 5px;
+    margin-bottom: 5px;
+}
+
+  #no {
+    margin-bottom: 5px;
+}
+
+.card_image {
+  margin: 0px 5px 5px 0px;
+}
+
+#dealer_turn_form {
+  margin-top: 5px;
+}
