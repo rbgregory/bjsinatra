@@ -156,6 +156,10 @@ post '/game/player/hit' do
   # if the player requests a hit, deal a card and check if player has hit
   # blackjack or busted.
   session[:player_cards] << session[:deck].pop
+  redirect '/game/player'
+end
+
+get '/game/player' do
   player_total = calculate_total(session[:player_cards])
   if player_total == BLACKJACK
     @success = "Congratulations! #{session[:player_name]} hit blackjack!"
@@ -170,17 +174,15 @@ post '/game/player/hit' do
 end
 
 post '/game/player/stay' do
-  @game_over = check_game_over?
-  @show_dealer_turn_button = true if !@game_over
-  erb :game
-end
-
-get '/busted' do
-  erb :busted
+  redirect '/game/dealer'
 end
 
 post '/game/dealer/turn' do
   session[:dealer_cards] << session[:deck].pop
+  redirect '/game/dealer'
+end
+
+get '/game/dealer' do
   @game_over = check_game_over?
   @show_dealer_turn_button = true if !@game_over
   erb :game
