@@ -12,6 +12,8 @@ BLACKJACK = 21
 CARD_SUIT = 0
 CARD_VALUE = 1
 
+PLAYER_CASH = 500
+
 #set :sessions, true
 use Rack::Session::Cookie, :key => 'rack.session',
                            :path => '/',
@@ -38,7 +40,8 @@ helpers do
     end
   
     #correct for Aces, if we have blown over 21
-    card_values.select{|value| value == ACE}.count.times do
+    #card_values.select{|value| value == ACE}.count.times do
+    card_values.count(ACE).times do
       total -= (ACE_VALUE - ACE_VALUE_ALT) if total > BLACKJACK
     end
   
@@ -71,6 +74,31 @@ helpers do
     end
     "<img src='/images/cards/#{suit}_#{value}.jpg' class='card_image'>"
   end
+  
+  def winner!(msg)
+    @game_over = true
+    @show_hit_or_stay_buttons = false
+    session[:player_cash] = session[:player_cash] + session[:player_bet]
+    @winner = "<strong>#{session[:player_name]} wins!</strong> #{msg}"
+  end
+
+  def loser!(msg)
+    @game_over = true
+    @show_hit_or_stay_buttons = false
+    session[:player_cash] = session[:player_cash] - session[:player_bet]
+    @loser = "<strong>#{session[:player_name]} loses.</strong> #{msg}"
+  end
+
+  def tie!(msg)
+    @game_over = true
+    @show_hit_or_stay_buttons = false
+    @winner = "<strong>It's a tie!</strong> #{msg}"
+  end
+
+end
+
+def change_player_cash cash
+  session[:player_cash] += cash
 end
 
 def check_game_over?
@@ -78,21 +106,26 @@ def check_game_over?
   @show_dealer_cards = true
   dealer_total = calculate_total(session[:dealer_cards])
   if dealer_total == BLACKJACK
-    @error = "Dealer hit blackjack!"
+    loser!("Dealer hit blackjack!")
+    #@error = "Dealer hit blackjack!"
     true
   elsif dealer_total > BLACKJACK
-    @success = "#{session[:player_name]} wins, dealer busted at #{dealer_total}!"
+    winner!("Dealer busted at #{dealer_total}!")
+    #@success = "#{session[:player_name]} wins, dealer busted at #{dealer_total}!"
     @show_dealer_turn_button = false
     true
   else
     if dealer_total >= DEALER_LIMIT
       player_total = calculate_total(session[:player_cards])
       if dealer_total > player_total
-        @error = "Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}- dealer wins!"
+        loser!("Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}.")
+        #@error = "Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}- dealer wins!"
       elsif dealer_total < player_total
-        @success = "Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}-  #{session[:player_name]} wins!"
+        winner!("Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}.")
+        #@success = "Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}-  #{session[:player_name]} wins!"
       else
-        @success = "Both Dealer and #{session[:player_name]} stayed at #{player_total}- It's a tie!"
+        tie!("Both Dealer and #{session[:player_name]} stayed at #{player_total}.")
+        #@success = "Both Dealer and #{session[:player_name]} stayed at #{player_total}- It's a tie!"
       end
     else
       false
@@ -109,13 +142,15 @@ end
 
 get '/' do
   if session[:player_name]
-    redirect '/game'
+    redirect '/bet'
   else
     redirect '/new_player'
   end
 end
 
 get '/new_player' do
+  session[:player_cash] = PLAYER_CASH
+  session[:player_bet] = nil
   erb :set_name
 end
 
@@ -125,7 +160,31 @@ post '/set_name' do
     halt erb :set_name
   end
   session[:player_name] = params['username']
-  redirect '/game'
+  redirect '/bet'
+end
+
+get '/bet' do
+  if session[:player_cash] > 0
+    erb :bet
+  else
+    redirect '/game_over'
+  end
+end
+
+post '/player_bet' do
+  if params[:bet_amount].empty? || params[:bet_amount].to_i == 0
+    @error = "Must make a bet"
+    halt erb :bet
+  elsif params[:bet_amount].to_i < 0
+    @error = "Not a valid bet."
+    halt erb :bet
+  elsif params[:bet_amount].to_i > session[:player_cash]
+    @error = "You cannot bet more than you have, which is #{session[:player_cash]}."
+    halt erb :bet
+  else
+    session[:player_bet] = params[:bet_amount].to_i
+    redirect '/game'
+  end
 end
 
 get '/game' do
@@ -145,9 +204,11 @@ get '/game' do
   #calculate initial player total and check if player has already hit blackjack
   player_total = calculate_total(session[:player_cards])
   if player_total == BLACKJACK
-      @success = "Congratulations! #{session[:player_name]} hit blackjack!"
-      @game_over = true
-      @show_hit_or_stay_buttons = false
+    winner!("#{session[:player_name]} hit blackjack.")
+    #  @success = "Congratulations! #{session[:player_name]} hit blackjack!"
+    #  @game_over = true
+    #  @show_hit_or_stay_buttons = false
+    #  change_player_cash(session[:player_bet])
   end
   erb :game
 end
@@ -162,15 +223,19 @@ end
 get '/game/player' do
   player_total = calculate_total(session[:player_cards])
   if player_total == BLACKJACK
-    @success = "Congratulations! #{session[:player_name]} hit blackjack!"
-    @show_hit_or_stay_buttons = false
-    @game_over = true
+    winner!("#{session[:player_name]} hit blackjack.")
+    #@success = "Congratulations! #{session[:player_name]} hit blackjack!"
+    #@show_hit_or_stay_buttons = false
+    #@game_over = true
+    #change_player_cash(session[:player_bet])
   elsif player_total > BLACKJACK
-    @error = "Sorry, it looks like #{session[:player_name]} busted at #{player_total}."
-    @show_hit_or_stay_buttons = false
-    @game_over = true
+    loser!("It looks like #{session[:player_name]} busted at #{player_total}.")
+    #@error = "Sorry, it looks like #{session[:player_name]} busted at #{player_total}."
+    #@show_hit_or_stay_buttons = false
+    #@game_over = true
+    #change_player_cash(session[:player_bet] * -1)
   end
-  erb :game
+  erb :game, layout: false
 end
 
 post '/game/player/stay' do
@@ -185,9 +250,13 @@ end
 get '/game/dealer' do
   @game_over = check_game_over?
   @show_dealer_turn_button = true if !@game_over
-  erb :game
+  erb :game, layout: false
 end
 
 get '/game/goodbye' do
   erb :goodbye
+end
+
+get '/game_over' do
+  erb :game_over
 end

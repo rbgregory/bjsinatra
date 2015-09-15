@@ -23,3 +23,9 @@
 #dealer_turn_form {
   margin-top: 5px;
 }
+
+#bet_form {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 50px;
+}
