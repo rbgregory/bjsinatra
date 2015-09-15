@@ -1,6 +1,6 @@
 require 'rubygems'
 require 'sinatra'
-require 'pry'
+#require 'pry'
 
 ACE= "A"
 ACE_VALUE = 11
@@ -107,11 +107,9 @@ def check_game_over?
   dealer_total = calculate_total(session[:dealer_cards])
   if dealer_total == BLACKJACK
     loser!("Dealer hit blackjack!")
-    #@error = "Dealer hit blackjack!"
     true
   elsif dealer_total > BLACKJACK
     winner!("Dealer busted at #{dealer_total}!")
-    #@success = "#{session[:player_name]} wins, dealer busted at #{dealer_total}!"
     @show_dealer_turn_button = false
     true
   else
@@ -119,13 +117,10 @@ def check_game_over?
       player_total = calculate_total(session[:player_cards])
       if dealer_total > player_total
         loser!("Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}.")
-        #@error = "Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}- dealer wins!"
       elsif dealer_total < player_total
         winner!("Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}.")
-        #@success = "Dealer stayed at #{dealer_total} and #{session[:player_name]} stayed at #{player_total}-  #{session[:player_name]} wins!"
       else
         tie!("Both Dealer and #{session[:player_name]} stayed at #{player_total}.")
-        #@success = "Both Dealer and #{session[:player_name]} stayed at #{player_total}- It's a tie!"
       end
     else
       false
@@ -205,10 +200,6 @@ get '/game' do
   player_total = calculate_total(session[:player_cards])
   if player_total == BLACKJACK
     winner!("#{session[:player_name]} hit blackjack.")
-    #  @success = "Congratulations! #{session[:player_name]} hit blackjack!"
-    #  @game_over = true
-    #  @show_hit_or_stay_buttons = false
-    #  change_player_cash(session[:player_bet])
   end
   erb :game
 end
@@ -224,16 +215,8 @@ get '/game/player' do
   player_total = calculate_total(session[:player_cards])
   if player_total == BLACKJACK
     winner!("#{session[:player_name]} hit blackjack.")
-    #@success = "Congratulations! #{session[:player_name]} hit blackjack!"
-    #@show_hit_or_stay_buttons = false
-    #@game_over = true
-    #change_player_cash(session[:player_bet])
   elsif player_total > BLACKJACK
     loser!("It looks like #{session[:player_name]} busted at #{player_total}.")
-    #@error = "Sorry, it looks like #{session[:player_name]} busted at #{player_total}."
-    #@show_hit_or_stay_buttons = false
-    #@game_over = true
-    #change_player_cash(session[:player_bet] * -1)
   end
   erb :game, layout: false
 end
