@@ -32,7 +32,7 @@ helpers do
     card_values.each do |value|
       if value == ACE
         total += ACE_VALUE    # an ace can be valued at 1 or 11, use 11 first
-      elsif value.to_i == 0   # J, Q, K - to_{} will return 0 if non-numeric input
+      elsif value.to_i == 0   # J, Q, K - to_i will return 0 if non-numeric input
         total += FACE_CARD_VALUE  # for those cases the card value is 10
       else
         total += value.to_i   
@@ -97,9 +97,9 @@ helpers do
 
 end
 
-def change_player_cash cash
-  session[:player_cash] += cash
-end
+#def change_player_cash cash
+#  session[:player_cash] += cash
+#end
 
 def check_game_over?
   @show_hit_or_stay_buttons = false
